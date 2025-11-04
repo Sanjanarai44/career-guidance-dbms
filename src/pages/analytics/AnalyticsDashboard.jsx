@@ -1,45 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useApp } from '../../context/AppContext';
 import './Analytics.css';
 
 const AnalyticsDashboard = () => {
   const navigate = useNavigate();
+  const { state, actions } = useApp();
   const [timeRange, setTimeRange] = useState('month');
   const [activeChart, setActiveChart] = useState('skills');
 
-  // Sample analytics data
+  // Calculate analytics based on user data
   const analyticsData = {
     overview: {
-      readinessScore: 65,
-      skillGrowth: 42,
-      profileCompletion: 40,
-      mentorConnections: 2,
-      careerMatches: 6
+      readinessScore: state.analytics.readinessScore,
+      skillGrowth: state.analytics.skillGrowth,
+      profileCompletion: state.user.profileCompletion,
+      mentorConnections: state.mentorshipRequests.length,
+      careerMatches: Math.min(state.skills.length * 2, 10) // Based on skills
     },
-    skillProgress: [
-      { name: 'JavaScript', current: 75, target: 90, growth: 15 },
-      { name: 'React', current: 60, target: 85, growth: 25 },
-      { name: 'Python', current: 45, target: 80, growth: 35 },
-      { name: 'Node.js', current: 30, target: 75, growth: 45 },
-      { name: 'UI/UX Design', current: 55, target: 80, growth: 25 },
-      { name: 'SQL', current: 40, target: 75, growth: 35 }
-    ],
+    skillProgress: state.skills.map(skill => ({
+      name: skill.name,
+      current: skill.level * 25, // Convert 1-4 scale to percentage
+      target: 85,
+      growth: Math.floor(Math.random() * 30) + 10 // Random growth for demo
+    })),
     monthlyProgress: [
       { month: 'Jan', skills: 20, readiness: 30, connections: 1 },
       { month: 'Feb', skills: 35, readiness: 45, connections: 1 },
-      { month: 'Mar', skills: 42, readiness: 65, connections: 2 },
-      { month: 'Apr', skills: 50, readiness: 75, connections: 3 },
-      { month: 'May', skills: 65, readiness: 85, connections: 4 },
-      { month: 'Jun', skills: 80, readiness: 95, connections: 5 }
+      { month: 'Mar', skills: state.analytics.skillGrowth, readiness: state.analytics.readinessScore, connections: state.mentorshipRequests.length },
+      { month: 'Apr', skills: Math.min(state.analytics.skillGrowth + 15, 100), readiness: Math.min(state.analytics.readinessScore + 10, 100), connections: state.mentorshipRequests.length + 1 },
+      { month: 'May', skills: Math.min(state.analytics.skillGrowth + 30, 100), readiness: Math.min(state.analytics.readinessScore + 20, 100), connections: state.mentorshipRequests.length + 2 },
+      { month: 'Jun', skills: Math.min(state.analytics.skillGrowth + 45, 100), readiness: Math.min(state.analytics.readinessScore + 30, 100), connections: state.mentorshipRequests.length + 3 }
     ],
     careerReadiness: {
-      technical: 70,
+      technical: Math.min(state.skills.length * 15, 100),
       communication: 60,
-      problemSolving: 75,
+      problemSolving: Math.min(state.skills.length * 12, 100),
       teamwork: 65,
       leadership: 50
     },
-    goals: [
+    goals: state.goals.length > 0 ? state.goals : [
       { id: 1, title: 'Complete React Project', progress: 75, deadline: '2024-02-15', priority: 'high' },
       { id: 2, title: 'Learn Node.js Basics', progress: 30, deadline: '2024-03-01', priority: 'medium' },
       { id: 3, title: 'Build Portfolio Website', progress: 20, deadline: '2024-04-01', priority: 'high' },
@@ -54,6 +54,34 @@ const AnalyticsDashboard = () => {
   };
 
   const readinessInfo = getReadinessLevel(analyticsData.overview.readinessScore);
+
+  const handleAddGoal = () => {
+    const goalTitle = prompt('Enter your new goal:');
+    if (goalTitle) {
+      const goalDeadline = prompt('Enter deadline (YYYY-MM-DD):');
+      if (goalDeadline) {
+        actions.addGoal({
+          title: goalTitle,
+          deadline: goalDeadline,
+          priority: 'medium'
+        });
+        alert('New goal added successfully!');
+      }
+    }
+  };
+
+  const handleUpdateGoalProgress = (goalId, progress) => {
+    const newProgress = prompt('Enter new progress percentage (0-100):');
+    if (newProgress !== null) {
+      const progressNum = parseInt(newProgress);
+      if (!isNaN(progressNum) && progressNum >= 0 && progressNum <= 100) {
+        actions.updateGoalProgress(goalId, progressNum);
+        alert('Progress updated successfully!');
+      } else {
+        alert('Please enter a valid number between 0 and 100.');
+      }
+    }
+  };
 
   return (
     <div className="analytics-container">
@@ -111,7 +139,7 @@ const AnalyticsDashboard = () => {
             <div className="card-content">
               <h4>Skill Growth</h4>
               <div className="card-value">{analyticsData.overview.skillGrowth}%</div>
-              <div className="card-trend positive">+12% this month</div>
+              <div className="card-trend positive">+{Math.floor(analyticsData.overview.skillGrowth / 4)}% this month</div>
             </div>
           </div>
 
@@ -134,7 +162,7 @@ const AnalyticsDashboard = () => {
             <div className="card-content">
               <h4>Mentor Connections</h4>
               <div className="card-value">{analyticsData.overview.mentorConnections}</div>
-              <div className="card-trend positive">+1 this month</div>
+              <div className="card-trend positive">+{analyticsData.overview.mentorConnections} active</div>
             </div>
           </div>
 
@@ -143,7 +171,7 @@ const AnalyticsDashboard = () => {
             <div className="card-content">
               <h4>Career Matches</h4>
               <div className="card-value">{analyticsData.overview.careerMatches}</div>
-              <div className="card-trend positive">+3 new matches</div>
+              <div className="card-trend positive">Based on your skills</div>
             </div>
           </div>
         </div>
@@ -185,9 +213,14 @@ const AnalyticsDashboard = () => {
         <div className="goals-section">
           <div className="section-header">
             <h2>Your Goals & Targets</h2>
-            <button className="add-goal-btn">+ Add New Goal</button>
+            <button className="add-goal-btn" onClick={handleAddGoal}>
+              + Add New Goal
+            </button>
           </div>
-          <GoalsList goals={analyticsData.goals} />
+          <GoalsList 
+            goals={analyticsData.goals} 
+            onUpdateProgress={handleUpdateGoalProgress}
+          />
         </div>
 
         {/* Recommendations Section */}
@@ -198,25 +231,48 @@ const AnalyticsDashboard = () => {
               <div className="rec-icon">💼</div>
               <h4>Complete Your Profile</h4>
               <p>Add your projects and certifications to increase your readiness score by 15%</p>
-              <button className="rec-action-btn">Complete Now</button>
+              <button 
+                className="rec-action-btn" 
+                onClick={() => navigate('/profile')}
+              >
+                Complete Now
+              </button>
             </div>
+            
             <div className="recommendation-card">
               <div className="rec-icon">📚</div>
-              <h4>Focus on Node.js</h4>
-              <p>Your Node.js skills are below target. Consider taking an advanced course.</p>
-              <button className="rec-action-btn">View Courses</button>
+              <h4>Develop Technical Skills</h4>
+              <p>Focus on {state.skills.length === 0 ? 'programming fundamentals' : 'advanced topics'} to improve your technical readiness.</p>
+              <button 
+                className="rec-action-btn" 
+                onClick={() => navigate('/skills')}
+              >
+                View Courses
+              </button>
             </div>
+            
             <div className="recommendation-card">
               <div className="rec-icon">🤝</div>
               <h4>Connect with Mentors</h4>
-              <p>Schedule sessions with DevOps mentors to improve your infrastructure skills.</p>
-              <button className="rec-action-btn">Find Mentors</button>
+              <p>Schedule sessions with industry professionals to get career guidance.</p>
+              <button 
+                className="rec-action-btn" 
+                onClick={() => navigate('/mentors')}
+              >
+                Find Mentors
+              </button>
             </div>
+            
             <div className="recommendation-card">
               <div className="rec-icon">🎯</div>
               <h4>Explore Career Paths</h4>
-              <p>Based on your skills, you have 6 strong career matches to explore.</p>
-              <button className="rec-action-btn">View Matches</button>
+              <p>Based on your {state.skills.length} skills, you have strong career matches to explore.</p>
+              <button 
+                className="rec-action-btn" 
+                onClick={() => navigate('/career')}
+              >
+                View Matches
+              </button>
             </div>
           </div>
         </div>
@@ -234,31 +290,37 @@ const SkillProgressChart = ({ data }) => {
         <p>Track your skill development progress</p>
       </div>
       <div className="skills-progress-chart">
-        {data.map((skill, index) => (
-          <div key={skill.name} className="skill-progress-item">
-            <div className="skill-info">
-              <span className="skill-name">{skill.name}</span>
-              <span className="skill-percentage">{skill.current}%</span>
-            </div>
-            <div className="progress-bars">
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill current" 
-                  style={{ width: `${skill.current}%` }}
-                ></div>
-              </div>
-              <div className="progress-bar target">
-                <div 
-                  className="progress-fill target" 
-                  style={{ width: `${skill.target}%` }}
-                ></div>
-              </div>
-            </div>
-            <div className="skill-growth">
-              <span className="growth-badge positive">+{skill.growth}% growth</span>
-            </div>
+        {data.length === 0 ? (
+          <div className="empty-chart">
+            <p>No skills added yet. Complete your skill assessment to see progress.</p>
           </div>
-        ))}
+        ) : (
+          data.map((skill, index) => (
+            <div key={skill.name} className="skill-progress-item">
+              <div className="skill-info">
+                <span className="skill-name">{skill.name}</span>
+                <span className="skill-percentage">{skill.current}%</span>
+              </div>
+              <div className="progress-bars">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill current" 
+                    style={{ width: `${skill.current}%` }}
+                  ></div>
+                </div>
+                <div className="progress-bar target">
+                  <div 
+                    className="progress-fill target" 
+                    style={{ width: `${skill.target}%` }}
+                  ></div>
+                </div>
+              </div>
+              <div className="skill-growth">
+                <span className="growth-badge positive">+{skill.growth}% growth</span>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -362,7 +424,7 @@ const ReadinessBreakdown = ({ data }) => {
 };
 
 // Goals List Component
-const GoalsList = ({ goals }) => {
+const GoalsList = ({ goals, onUpdateProgress }) => {
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'high': return '#e53e3e';
@@ -382,47 +444,58 @@ const GoalsList = ({ goals }) => {
 
   return (
     <div className="goals-list">
-      {goals.map(goal => {
-        const daysUntil = getDaysUntil(goal.deadline);
-        const isOverdue = daysUntil < 0;
-        
-        return (
-          <div key={goal.id} className="goal-card">
-            <div className="goal-header">
-              <h4>{goal.title}</h4>
-              <div className="goal-meta">
-                <span 
-                  className="priority-badge"
-                  style={{ backgroundColor: getPriorityColor(goal.priority) }}
-                >
-                  {goal.priority}
-                </span>
-                <span className={`deadline ${isOverdue ? 'overdue' : ''}`}>
-                  {isOverdue ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days left`}
-                </span>
+      {goals.length === 0 ? (
+        <div className="empty-state">
+          <p>No goals set yet. Add your first goal to track your progress!</p>
+        </div>
+      ) : (
+        goals.map(goal => {
+          const daysUntil = getDaysUntil(goal.deadline);
+          const isOverdue = daysUntil < 0;
+          
+          return (
+            <div key={goal.id} className="goal-card">
+              <div className="goal-header">
+                <h4>{goal.title}</h4>
+                <div className="goal-meta">
+                  <span 
+                    className="priority-badge"
+                    style={{ backgroundColor: getPriorityColor(goal.priority) }}
+                  >
+                    {goal.priority}
+                  </span>
+                  <span className={`deadline ${isOverdue ? 'overdue' : ''}`}>
+                    {isOverdue ? `${Math.abs(daysUntil)} days overdue` : `${daysUntil} days left`}
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div className="goal-progress">
-              <div className="progress-info">
-                <span className="progress-text">{goal.progress}% Complete</span>
-                <span className="progress-percentage">{goal.progress}%</span>
+              
+              <div className="goal-progress">
+                <div className="progress-info">
+                  <span className="progress-text">{goal.progress}% Complete</span>
+                  <span className="progress-percentage">{goal.progress}%</span>
+                </div>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${goal.progress}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="progress-bar">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
-              </div>
-            </div>
 
-            <div className="goal-actions">
-              <button className="action-btn primary">Update Progress</button>
-              <button className="action-btn secondary">Edit Goal</button>
+              <div className="goal-actions">
+                <button 
+                  className="action-btn primary"
+                  onClick={() => onUpdateProgress(goal.id, goal.progress)}
+                >
+                  Update Progress
+                </button>
+                <button className="action-btn secondary">Edit Goal</button>
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </div>
   );
 };
