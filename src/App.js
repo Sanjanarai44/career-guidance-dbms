@@ -1,24 +1,33 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AppProvider } from './context/AppContext';
+import Login from './pages/auth/Login';
+import Dashboard from './pages/dashboard/Dashboard';
+import StudentProfile from './pages/profile/StudentProfile';
+import SkillAssessment from './pages/skills/SkillAssessment';
+import Recommendations from './pages/career/Recommendations';
+import MentorDirectory from './pages/mentors/MentorDirectory';
+import AnalyticsDashboard from './pages/analytics/AnalyticsDashboard';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<StudentProfile />} />
+            <Route path="/skills" element={<SkillAssessment />} />
+            <Route path="/career" element={<Recommendations />} />
+            <Route path="/mentors" element={<MentorDirectory />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+          </Routes>
+        </div>
+      </Router>
+    </AppProvider>
   );
 }
 
