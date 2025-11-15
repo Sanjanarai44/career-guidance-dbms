@@ -35,20 +35,20 @@ const StudentProfile = () => {
     alert('Profile updated successfully!');
   };
 
-  const handleAddProject = () => {
-    const projectName = prompt('Enter project name:');
-    if (projectName) {
-      alert(`Project "${projectName}" added!`);
-      // In real app, this would update the state
-    }
-  };
+  // const handleAddProject = () => {
+  //   const projectName = prompt('Enter project name:');
+  //   if (projectName) {
+  //     alert(`Project "${projectName}" added!`);
+  //     // In real app, this would update the state
+  //   }
+  // };
 
-  const handleAddCertification = () => {
-    const certName = prompt('Enter certification name:');
-    if (certName) {
-      alert(`Certification "${certName}" added!`);
-    }
-  };
+  // const handleAddCertification = () => {
+  //   const certName = prompt('Enter certification name:');
+  //   if (certName) {
+  //     alert(`Certification "${certName}" added!`);
+  //   }
+  // };
 
   const handleAddActivity = () => {
     const activityName = prompt('Enter activity name:');
@@ -59,10 +59,10 @@ const StudentProfile = () => {
 
   const tabs = [
     { id: 'personal', label: 'Personal Info', icon: '👤' },
-    { id: 'academic', label: 'Academic Records', icon: '📚' },
-    { id: 'projects', label: 'Projects', icon: '💼' },
-    { id: 'certifications', label: 'Certifications', icon: '🏆' },
-    { id: 'extracurricular', label: 'Extracurricular', icon: '⚽' }
+    { id: 'academic', label: 'Academic Records', icon: '📚' }
+    // { id: 'projects', label: 'Projects', icon: '💼' },
+    // { id: 'certifications', label: 'Certifications', icon: '🏆' },
+    // { id: 'extracurricular', label: 'Extracurricular', icon: '⚽' }
   ];
 
   return (
@@ -133,7 +133,7 @@ const StudentProfile = () => {
                     disabled={!isEditing}
                   />
                 </div>
-
+{/* 
                 <div className="form-group">
                   <label>Phone</label>
                   <input
@@ -145,7 +145,7 @@ const StudentProfile = () => {
                     })}
                     disabled={!isEditing}
                   />
-                </div>
+                </div> */}
 
                 <div className="form-group">
                   <label>University</label>
@@ -161,7 +161,7 @@ const StudentProfile = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Major</label>
+                  <label>Department</label>
                   <input
                     type="text"
                     value={formData.personal.major}
@@ -226,7 +226,7 @@ const StudentProfile = () => {
             </div>
           )}
 
-          {activeTab === 'projects' && (
+          {/* {activeTab === 'projects' && (
             <div className="section-container">
               <div className="section-header">
                 <h2>Projects Portfolio</h2>
@@ -243,9 +243,9 @@ const StudentProfile = () => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
-          {activeTab === 'certifications' && (
+          {/* {activeTab === 'certifications' && (
             <div className="section-container">
               <div className="section-header">
                 <h2>Certifications</h2>
@@ -262,9 +262,9 @@ const StudentProfile = () => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
 
-          {activeTab === 'extracurricular' && (
+          {/* {activeTab === 'extracurricular' && (
             <div className="section-container">
               <div className="section-header">
                 <h2>Extracurricular Activities</h2>
@@ -281,7 +281,7 @@ const StudentProfile = () => {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

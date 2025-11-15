@@ -1,18 +1,34 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
 import './Auth.css';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // For now, we'll just redirect to dashboard
-    // In Phase 2, we'll add real authentication
-    console.log('Logging in:', { username, password });
-    navigate('/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await authAPI.login(email, password);
+      
+      // Store token and user data
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Navigate to dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'User not found');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,12 +41,12 @@ const Login = () => {
         
         <form onSubmit={handleLogin} className="auth-form">
           <div className="input-group">
-            <label>Username or Email</label>
+            <label>Email</label>
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
               required
             />
           </div>
@@ -46,8 +62,14 @@ const Login = () => {
             />
           </div>
           
-          <button type="submit" className="auth-button">
-            Sign In
+          {error && (
+            <div className="error-message" style={{ color: 'red', marginBottom: '10px', fontSize: '14px' }}>
+              {error}
+            </div>
+          )}
+          
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
         

@@ -200,12 +200,12 @@ const MentorDirectory = () => {
           >
             📨 My Requests
           </button>
-          <button 
+          {/* <button 
             className={`tab ${activeTab === 'sessions' ? 'active' : ''}`}
             onClick={() => setActiveTab('sessions')}
           >
             🗓️ Sessions
-          </button>
+          </button> */}
         </div>
 
         {/* Filters */}

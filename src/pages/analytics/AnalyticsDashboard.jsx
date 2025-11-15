@@ -90,7 +90,7 @@ const AnalyticsDashboard = () => {
           ← Back to Dashboard
         </button>
         <h1>Progress Tracking & Analytics</h1>
-        <div className="time-filter">
+        {/* <div className="time-filter">
           <select 
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -101,7 +101,7 @@ const AnalyticsDashboard = () => {
             <option value="quarter">Last Quarter</option>
             <option value="year">Last Year</option>
           </select>
-        </div>
+        </div> */}
       </header>
 
       <div className="analytics-content">
@@ -187,12 +187,12 @@ const AnalyticsDashboard = () => {
               >
                 Skill Progress
               </button>
-              <button 
+              {/* <button 
                 className={`chart-tab ${activeChart === 'growth' ? 'active' : ''}`}
                 onClick={() => setActiveChart('growth')}
               >
                 Growth Trends
-              </button>
+              </button> */}
               <button 
                 className={`chart-tab ${activeChart === 'readiness' ? 'active' : ''}`}
                 onClick={() => setActiveChart('readiness')}
@@ -224,7 +224,7 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* Recommendations Section */}
-        <div className="recommendations-section">
+        {/* <div className="recommendations-section">
           <h2>Personalized Recommendations</h2>
           <div className="recommendations-grid">
             <div className="recommendation-card">
@@ -275,7 +275,7 @@ const AnalyticsDashboard = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
