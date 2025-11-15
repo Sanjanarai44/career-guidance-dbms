@@ -4,7 +4,6 @@ import { authAPI } from '../../services/api';
 import './Auth.css';
 
 const Register = () => {
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -16,19 +15,25 @@ const Register = () => {
     e.preventDefault();
     setError('');
 
-    // Add client-side password matching validation
+    // Validate password match
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return;
     }
     
     setLoading(true);
 
     try {
-      // Assuming your authAPI has a 'register' method
-      await authAPI.register(email, password);
+      const response = await authAPI.register(email, password);
       
-      // On successful registration, navigate to the login page
+      // Show success message and navigate to login
+      alert('Account created successfully! Please login.');
       navigate('/login');
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -46,16 +51,6 @@ const Register = () => {
         </div>
         
         <form onSubmit={handleRegister} className="auth-form">
-          <div className="input-group">
-            <label>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              required
-            />
-          </div>
           <div className="input-group">
             <label>Email</label>
             <input

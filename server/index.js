@@ -25,6 +25,7 @@ db.connect((err) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/users', require('./routes/users'));
 
 // Health check
 app.get('/api/health', (req, res) => {

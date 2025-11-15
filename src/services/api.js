@@ -28,6 +28,17 @@ const apiRequest = async (endpoint, options = {}) => {
       throw new Error('Cannot connect to server. Make sure the backend server is running on port 5000.');
     }
 
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      // If it's HTML, it's likely an error page
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        throw new Error(`Server returned HTML instead of JSON. The endpoint may not exist or the server needs to be restarted. Status: ${response.status}`);
+      }
+      throw new Error(`Unexpected response format. Expected JSON but got: ${contentType}`);
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -40,6 +51,10 @@ const apiRequest = async (endpoint, options = {}) => {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error('Cannot connect to server. Please make sure the backend server is running. Run "npm run server" in a separate terminal.');
     }
+    // Re-throw if it's already our custom error
+    if (error.message && (error.message.includes('HTML') || error.message.includes('JSON'))) {
+      throw error;
+    }
     throw error;
   }
 };
@@ -50,6 +65,38 @@ export const authAPI = {
     return apiRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
+    });
+  },
+  register: async (email, password) => {
+    return apiRequest('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+};
+
+// Student API
+export const studentAPI = {
+  getProfile: async () => {
+    return apiRequest('/users/student', {
+      method: 'GET',
+    });
+  },
+  updateProfile: async (profileData) => {
+    return apiRequest('/users/student', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+  },
+  getAcademicRecords: async () => {
+    return apiRequest('/users/academic-records', {
+      method: 'GET',
+    });
+  },
+  addAcademicRecord: async (recordData) => {
+    return apiRequest('/users/academic-records', {
+      method: 'POST',
+      body: JSON.stringify(recordData),
     });
   },
 };

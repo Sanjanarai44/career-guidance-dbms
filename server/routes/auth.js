@@ -7,6 +7,50 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Register endpoint
+router.post('/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Check if user already exists
+    const [existingUsers] = await db.query(
+      'SELECT * FROM users WHERE email = ?',
+      [email]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    // Insert new user (password stored as plain text as per your requirement)
+    const [result] = await db.query(
+      'INSERT INTO users (email, password) VALUES (?, ?)',
+      [email, password]
+    );
+
+    res.status(201).json({
+      message: 'Account created successfully',
+      user: {
+        id: result.insertId,
+        email: email
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
 // Login endpoint - GET handler (for testing/info)
 router.get('/login', (req, res) => {
   res.status(405).json({ 
