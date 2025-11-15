@@ -99,6 +99,11 @@ export const studentAPI = {
       body: JSON.stringify(recordData),
     });
   },
+  getSkills: async () => {
+    return apiRequest('/users/skills', {
+      method: 'GET',
+    });
+  },
 };
 
 export default apiRequest;

@@ -39,3 +39,10 @@ CREATE TABLE IF NOT EXISTS record_courses (
     FOREIGN KEY (record_id) REFERENCES academic_record(record_id) ON DELETE CASCADE
 );
 
+-- Skill table
+CREATE TABLE IF NOT EXISTS Skill (
+    skill_id INT PRIMARY KEY AUTO_INCREMENT,
+    skill_name VARCHAR(100) NOT NULL,
+    skill_type ENUM('Technical', 'Soft') NOT NULL
+);
+

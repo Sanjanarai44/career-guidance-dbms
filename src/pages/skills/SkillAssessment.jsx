@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { studentAPI } from '../../services/api';
 import './Skills.css'; // Ensure this path is correct
 
 const SkillAssessment = () => {
@@ -9,21 +10,28 @@ const SkillAssessment = () => {
   const [activeSection, setActiveSection] = useState('skills');
   const [userSkills, setUserSkills] = useState(state.skills || []);
   const [userInterests, setUserInterests] = useState(state.interests || []);
+  const [skillsDatabase, setSkillsDatabase] = useState([]);
+  const [loadingSkills, setLoadingSkills] = useState(true);
 
-  const skillsDatabase = [
-    { id: 1, name: 'JavaScript', category: 'Tech' },
-    { id: 2, name: 'Python', category: 'Tech' },
-    { id: 3, name: 'React', category: 'Tech' },
-    { id: 4, name: 'Node.js', category: 'Tech' },
-    { id: 5, name: 'SQL', category: 'Tech' },
-    { id: 6, name: 'MongoDB', category: 'Tech' },
-    { id: 7, name: 'UI/UX Design', category: 'Tech' },
-    { id: 9, name: 'Data Analysis', category: 'Tech' },
-    { id: 10, name: 'Machine Learning', category: 'Tech' },
-    { id: 8, name: 'Project Management', category: 'Soft' },
-    { id: 11, name: 'Communication', category: 'Soft' },
-    { id: 12, name: 'Team Leadership', category: 'Soft' }
-  ];
+  // Fetch skills from database on component mount
+  useEffect(() => {
+    fetchSkills();
+  }, []);
+
+  const fetchSkills = async () => {
+    try {
+      setLoadingSkills(true);
+      const skills = await studentAPI.getSkills();
+      console.log('Fetched skills from API:', skills);
+      setSkillsDatabase(skills || []);
+    } catch (error) {
+      console.error('Error fetching skills:', error);
+      // If error, use empty array - skills will be empty but app won't crash
+      setSkillsDatabase([]);
+    } finally {
+      setLoadingSkills(false);
+    }
+  };
 
   const interestsDatabase = [
     { id: 1, name: 'Web Development', category: 'Technology' },
@@ -131,14 +139,20 @@ const SkillAssessment = () => {
 
         <div className="assessment-main">
           {activeSection === 'skills' && (
-            <SkillsSection 
-              skillsPool={skillsDatabase}
-              userSkills={userSkills}
-              onAddSkill={handleAddSkill}
-              onRemoveSkill={handleRemoveSkill}
-              onSkillLevelChange={handleSkillLevelChange}
-              getSkillLevelLabel={getSkillLevelLabel}
-            />
+            loadingSkills ? (
+              <div style={{ padding: '40px', textAlign: 'center' }}>
+                <p>Loading skills...</p>
+              </div>
+            ) : (
+              <SkillsSection 
+                skillsPool={skillsDatabase}
+                userSkills={userSkills}
+                onAddSkill={handleAddSkill}
+                onRemoveSkill={handleRemoveSkill}
+                onSkillLevelChange={handleSkillLevelChange}
+                getSkillLevelLabel={getSkillLevelLabel}
+              />
+            )
           )}
 
           {activeSection === 'interests' && (
@@ -187,6 +201,10 @@ const SkillsSection = ({
   const [currentSkillCategory, setCurrentSkillCategory] = useState('Tech'); // 'Tech' or 'Soft'
 
   const handleOpenModal = (category) => {
+    if (skillsPool.length === 0) {
+      alert('Skills are still loading. Please wait a moment and try again.');
+      return;
+    }
     setCurrentSkillCategory(category);
     setIsModalOpen(true);
   };
@@ -311,17 +329,34 @@ const SkillCard = ({ skill, onSkillLevelChange, onRemoveSkill, getSkillLevelLabe
 
 // --- New SkillSelectionModal Component ---
 const SkillSelectionModal = ({ skillsPool, userSkills, category, onSelectSkill, onClose }) => {
+  // Filter skills by category (Tech or Soft) and exclude already added skills
   const availableSkills = skillsPool.filter(
-    poolSkill => 
-      poolSkill.category === category &&
-      !userSkills.some(userSkill => userSkill.id === poolSkill.id)
+    poolSkill => {
+      const matchesCategory = poolSkill.category === category;
+      const notAlreadyAdded = !userSkills.some(userSkill => userSkill.id === poolSkill.id);
+      return matchesCategory && notAlreadyAdded;
+    }
   );
+
+  // Display category name nicely
+  const categoryDisplayName = category === 'Tech' ? 'Technical' : 'Soft';
+
+  // Debug: Log to help troubleshoot
+  console.log('Modal Debug:', {
+    category,
+    skillsPoolLength: skillsPool.length,
+    skillsPoolCategories: [...new Set(skillsPool.map(s => s.category))],
+    skillsInCategory: skillsPool.filter(s => s.category === category).length,
+    availableSkillsLength: availableSkills.length,
+    userSkillsLength: userSkills.length,
+    sampleSkills: skillsPool.filter(s => s.category === category).slice(0, 3)
+  });
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <button className="modal-close-btn" onClick={onClose}>&times;</button>
-        <h2>Select {category} Skills</h2>
+        <h2>Select {categoryDisplayName} Skills</h2>
         <p>Choose skills from the list below to add to your profile.</p>
 
         <div className="modal-skills-grid">
@@ -335,8 +370,18 @@ const SkillSelectionModal = ({ skillsPool, userSkills, category, onSelectSkill, 
                 {skill.name}
               </button>
             ))
+          ) : skillsPool.length === 0 ? (
+            <p className="empty-modal-state">No skills available. Please check if skills are loaded from the database.</p>
+          ) : skillsPool.filter(s => s.category === category).length === 0 ? (
+            <p className="empty-modal-state">No {categoryDisplayName} skills found in the database. Found categories: {[...new Set(skillsPool.map(s => s.category))].join(', ')}</p>
           ) : (
-            <p className="empty-modal-state">All available {category} skills have been added.</p>
+            <div>
+              <p className="empty-modal-state">All available {categoryDisplayName} skills have been added.</p>
+              <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+                Total {categoryDisplayName} skills in database: {skillsPool.filter(s => s.category === category).length} | 
+                Already added: {userSkills.filter(s => s.category === category).length}
+              </p>
+            </div>
           )}
         </div>
         <button className="modal-cancel-btn" onClick={onClose}>Done</button>

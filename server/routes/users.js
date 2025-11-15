@@ -204,5 +204,28 @@ router.post('/academic-records', verifyToken, async (req, res) => {
   }
 });
 
+// Get all skills (no authentication required - public skills list)
+router.get('/skills', async (req, res) => {
+  try {
+    const [skills] = await db.query(
+      'SELECT skill_id as id, skill_name as name, skill_type FROM Skill ORDER BY skill_type, skill_name'
+    );
+
+    // Map skill_type to category for frontend compatibility
+    // "Technical" -> "Tech", "Soft" -> "Soft"
+    const mappedSkills = skills.map(skill => ({
+      id: skill.id,
+      name: skill.name,
+      category: skill.skill_type === 'Technical' ? 'Tech' : 'Soft'
+    }));
+
+    console.log(`Returning ${mappedSkills.length} skills from database`);
+    res.json(mappedSkills);
+  } catch (error) {
+    console.error('Get skills error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
 module.exports = router;
 
