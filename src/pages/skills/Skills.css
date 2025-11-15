@@ -115,6 +115,10 @@
   font-size: 0.95rem;
 }
 
+/* --- New Add Skill Styles --- */
+
+/* ----------------------------- */
+
 .category-section {
   margin-bottom: 40px;
 }
@@ -138,7 +142,12 @@
   background: #f7fafc;
   padding: 20px;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #e2e8f0; /* Default border */
+}
+
+/* --- New Style for Added Skills --- */
+.skill-card.selected {
+  border-left-color: #667eea; /* Highlight for added skills */
 }
 
 .skill-header {
@@ -187,6 +196,26 @@
   color: white;
   border-color: #667eea;
 }
+
+/* --- New Remove Skill Button Style --- */
+.remove-skill-btn {
+  background: #fbebeb;
+  color: #d9534f;
+  border: 1px solid #d9534f;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: all 0.2s;
+}
+
+.remove-skill-btn:hover {
+  background: #d9534f;
+  color: white;
+}
+/* ----------------------------------- */
 
 .interests-grid {
   display: grid;
@@ -379,3 +408,214 @@
   cursor: not-allowed;
   transform: none;
 }
+
+/* --- New Empty State Style --- */
+.empty-state {
+  text-align: center;
+  color: #718096;
+  font-size: 1rem;
+  margin-top: 30px;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+}
+.add-skill-buttons {
+  display: flex;
+  gap: 20px; /* Space between buttons */
+  margin-bottom: 40px; /* Space below buttons before skill sections */
+  justify-content: center; /* Center the buttons */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+}
+
+.add-tech-skill-btn,
+.add-soft-skill-btn {
+  padding: 12px 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 25px; /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  flex-grow: 0; /* Don't grow to fill space */
+  flex-shrink: 0; /* Don't shrink */
+}
+
+.add-tech-skill-btn {
+  background: white; /* White background for Soft, like "Add profile section" */
+  color: #206ed8;
+  border: 1px solid #206ed8;
+  box-shadow: 0 2px 5px rgba(32, 110, 216, 0.1);
+}
+
+.add-tech-skill-btn:hover {
+  background: #206ed8;
+  color: white; /* Light blue on hover */
+  transform: translateY(-1px);
+}
+
+.add-soft-skill-btn {
+  background: white; /* White background for Soft, like "Add profile section" */
+  color: #206ed8;
+  border: 1px solid #206ed8;
+  box-shadow: 0 2px 5px rgba(32, 110, 216, 0.1);
+}
+
+.add-soft-skill-btn:hover {
+  background: #206ed8;
+  color: white; /* Light blue on hover */
+  transform: translateY(-1px);
+}
+
+/* --- Modal Overlay & Content --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px); /* Optional: blur background */
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  position: relative;
+  max-height: 80vh; /* Limit height */
+  overflow-y: auto; /* Scroll if content is too long */
+}
+
+.modal-content h2 {
+  color: #2d3748;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.modal-content p {
+  color: #718096;
+  margin-bottom: 25px;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+  color: #4a5568;
+}
+
+.modal-skills-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Space between skill chips */
+  margin-bottom: 30px;
+  justify-content: center; /* Center the chips */
+}
+
+.modal-skill-chip {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  padding: 10px 18px;
+  border-radius: 20px; /* Pill shape */
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+  flex-shrink: 0; /* Don't let them shrink */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-skill-chip:hover {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+  color: #2d3748;
+  transform: translateY(-1px);
+}
+
+/* Specific styling for Tech/Soft chips if desired */
+.modal-skill-chip.tech {
+  background: #e6f0ff;
+  border-color: #667eea;
+  color: #206ed8;
+}
+
+.modal-skill-chip.soft {
+  background: #ffeeda;
+  border-color: #ed8936;
+  color: #ed8936;
+}
+
+.empty-modal-state {
+  text-align: center;
+  color: #718096;
+  font-size: 0.9rem;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+  width: 100%;
+}
+
+.modal-cancel-btn {
+  background: #cbd5e0;
+  color: #4a5568;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: block; /* Make it block to center with margin auto */
+  margin: 0 auto;
+  transition: background-color 0.2s;
+}
+
+.modal-cancel-btn:hover {
+  background: #a0aec0;
+}
+
+/* --- Adjustments for existing elements --- */
+
+/* Ensure category-title looks good with new sections */
+.category-title {
+  color: #4a5568;
+  font-size: 1.25rem; /* Slightly larger */
+  margin-bottom: 25px; /* More space below title */
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+  text-align: left; /* Align category titles */
+}
+
+/* Adjust empty state message for separate sections */
+.empty-state {
+  text-align: center;
+  color: #718096;
+  font-size: 0.95rem;
+  margin-top: 15px; /* Less top margin, as it's within a section */
+  padding: 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e0; /* Dashed border for visual cue */
+}
+
+/* Remove old .add-skill-container and .skill-select styles if they are no longer used. */
+/* If you want to keep them for potential future use or other components, you can. */
+/* .add-skill-container { display: none; } */
+/* .skill-select { display: none; } */
+/* .add-skill-btn { display: none; } */

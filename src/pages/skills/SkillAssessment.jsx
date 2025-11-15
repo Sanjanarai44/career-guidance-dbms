@@ -1,32 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import './Skills.css';
+import './Skills.css'; // Ensure this path is correct
 
 const SkillAssessment = () => {
   const navigate = useNavigate();
   const { state, actions } = useApp();
   const [activeSection, setActiveSection] = useState('skills');
-  const [userSkills, setUserSkills] = useState(state.skills);
-  const [userInterests, setUserInterests] = useState(state.interests);
+  const [userSkills, setUserSkills] = useState(state.skills || []);
+  const [userInterests, setUserInterests] = useState(state.interests || []);
 
-  // Skills database
   const skillsDatabase = [
-    { id: 1, name: 'JavaScript', category: 'Programming', level: 0 },
-    { id: 2, name: 'Python', category: 'Programming', level: 0 },
-    { id: 3, name: 'React', category: 'Frontend', level: 0 },
-    { id: 4, name: 'Node.js', category: 'Backend', level: 0 },
-    { id: 5, name: 'SQL', category: 'Database', level: 0 },
-    { id: 6, name: 'MongoDB', category: 'Database', level: 0 },
-    { id: 7, name: 'UI/UX Design', category: 'Design', level: 0 },
-    { id: 8, name: 'Project Management', category: 'Business', level: 0 },
-    { id: 9, name: 'Data Analysis', category: 'Analytics', level: 0 },
-    { id: 10, name: 'Machine Learning', category: 'AI/ML', level: 0 },
-    { id: 11, name: 'Communication', category: 'Soft Skills', level: 0 },
-    { id: 12, name: 'Team Leadership', category: 'Soft Skills', level: 0 }
+    { id: 1, name: 'JavaScript', category: 'Tech' },
+    { id: 2, name: 'Python', category: 'Tech' },
+    { id: 3, name: 'React', category: 'Tech' },
+    { id: 4, name: 'Node.js', category: 'Tech' },
+    { id: 5, name: 'SQL', category: 'Tech' },
+    { id: 6, name: 'MongoDB', category: 'Tech' },
+    { id: 7, name: 'UI/UX Design', category: 'Tech' },
+    { id: 9, name: 'Data Analysis', category: 'Tech' },
+    { id: 10, name: 'Machine Learning', category: 'Tech' },
+    { id: 8, name: 'Project Management', category: 'Soft' },
+    { id: 11, name: 'Communication', category: 'Soft' },
+    { id: 12, name: 'Team Leadership', category: 'Soft' }
   ];
 
-  // Interests database
   const interestsDatabase = [
     { id: 1, name: 'Web Development', category: 'Technology' },
     { id: 2, name: 'Mobile App Development', category: 'Technology' },
@@ -42,18 +40,25 @@ const SkillAssessment = () => {
     { id: 12, name: 'Entrepreneurship', category: 'Business' }
   ];
 
+  const handleAddSkill = (skillObj) => {
+    // skillObj will already contain id, name, category from the modal
+    if (skillObj && !userSkills.some(skill => skill.id === skillObj.id)) {
+      setUserSkills([...userSkills, { ...skillObj, level: 1 }]); // Add with default level 1
+    }
+  };
+
+  const handleRemoveSkill = (skillId) => {
+    setUserSkills(userSkills.filter(skill => skill.id !== skillId));
+  };
+
   const handleSkillLevelChange = (skillId, level) => {
-    const updatedSkills = skillsDatabase.map(skill => 
+    setUserSkills(userSkills.map(skill => 
       skill.id === skillId ? { ...skill, level } : skill
-    );
-    
-    const userSelectedSkills = updatedSkills.filter(skill => skill.level > 0);
-    setUserSkills(userSelectedSkills);
+    ));
   };
 
   const handleInterestToggle = (interestId) => {
     const isSelected = userInterests.some(interest => interest.id === interestId);
-    
     if (isSelected) {
       setUserInterests(userInterests.filter(interest => interest.id !== interestId));
     } else {
@@ -78,10 +83,8 @@ const SkillAssessment = () => {
       alert('Please add at least one skill or interest before saving!');
       return;
     }
-
     actions.addSkills(userSkills);
     actions.addInterests(userInterests);
-    
     alert('Assessment saved successfully! Your profile has been updated.');
     navigate('/dashboard');
   };
@@ -105,7 +108,6 @@ const SkillAssessment = () => {
       </header>
 
       <div className="skills-content">
-        {/* Navigation Tabs */}
         <div className="assessment-tabs">
           <button 
             className={`tab ${activeSection === 'skills' ? 'active' : ''}`}
@@ -127,11 +129,13 @@ const SkillAssessment = () => {
           </button>
         </div>
 
-        {/* Main Content */}
         <div className="assessment-main">
           {activeSection === 'skills' && (
             <SkillsSection 
-              skills={skillsDatabase}
+              skillsPool={skillsDatabase}
+              userSkills={userSkills}
+              onAddSkill={handleAddSkill}
+              onRemoveSkill={handleRemoveSkill}
               onSkillLevelChange={handleSkillLevelChange}
               getSkillLevelLabel={getSkillLevelLabel}
             />
@@ -151,11 +155,11 @@ const SkillAssessment = () => {
               userInterests={userInterests}
               matchScore={calculateCareerMatches()}
               onSave={handleSaveAssessment}
+              getSkillLevelLabel={getSkillLevelLabel}
             />
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="assessment-actions">
           <button 
             className="save-button"
@@ -170,54 +174,178 @@ const SkillAssessment = () => {
   );
 };
 
-// Skills Section Component
-const SkillsSection = ({ skills, onSkillLevelChange, getSkillLevelLabel }) => {
-  const skillsByCategory = skills.reduce((acc, skill) => {
-    if (!acc[skill.category]) acc[skill.category] = [];
-    acc[skill.category].push(skill);
-    return acc;
-  }, {});
+// --- SkillsSection Component (Updated for Modal and Sections) ---
+const SkillsSection = ({ 
+  skillsPool, 
+  userSkills, 
+  onAddSkill, 
+  onRemoveSkill, 
+  onSkillLevelChange, 
+  getSkillLevelLabel 
+}) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentSkillCategory, setCurrentSkillCategory] = useState('Tech'); // 'Tech' or 'Soft'
+
+  const handleOpenModal = (category) => {
+    setCurrentSkillCategory(category);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  // Filter skills by category for display
+  const techSkills = userSkills.filter(skill => skill.category === 'Tech');
+  const softSkills = userSkills.filter(skill => skill.category === 'Soft');
 
   return (
     <div className="section">
-      <h2>Rate Your Skills Level</h2>
+      <h2>Your Skill Inventory</h2>
       <p className="section-description">
-        Select your proficiency level for each skill (1=Beginner, 4=Expert)
+        Add technical and soft skills, then rate your proficiency (1=Beginner, 4=Expert).
       </p>
 
-      {Object.entries(skillsByCategory).map(([category, categorySkills]) => (
-        <div key={category} className="category-section">
-          <h3 className="category-title">{category}</h3>
+      {/* --- Add Skill Buttons (New) --- */}
+      <div className="add-skill-buttons">
+        <button 
+          className="add-tech-skill-btn" 
+          onClick={() => handleOpenModal('Tech')}
+        >
+          Add Technical Skill
+        </button>
+        <button 
+          className="add-soft-skill-btn" 
+          onClick={() => handleOpenModal('Soft')}
+        >
+          Add Soft Skill
+        </button>
+      </div>
+
+      {/* --- Technical Skills Section --- */}
+      <div className="category-section">
+        <h3 className="category-title">Technical Skills</h3>
+        {techSkills.length > 0 ? (
           <div className="skills-grid">
-            {categorySkills.map(skill => (
-              <div key={skill.id} className="skill-card">
-                <div className="skill-header">
-                  <span className="skill-name">{skill.name}</span>
-                  <span className="skill-level">
-                    {getSkillLevelLabel(skill.level)}
-                  </span>
-                </div>
-                <div className="skill-level-selector">
-                  {[1, 2, 3, 4].map(level => (
-                    <button
-                      key={level}
-                      className={`level-btn ${skill.level === level ? 'active' : ''}`}
-                      onClick={() => onSkillLevelChange(skill.id, level)}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {techSkills.map(skill => (
+              <SkillCard
+                key={skill.id}
+                skill={skill}
+                onSkillLevelChange={onSkillLevelChange}
+                onRemoveSkill={onRemoveSkill}
+                getSkillLevelLabel={getSkillLevelLabel}
+              />
             ))}
           </div>
-        </div>
-      ))}
+        ) : (
+          <p className="empty-state">No technical skills added yet. Click "Add Technical Skill" to get started.</p>
+        )}
+      </div>
+
+      {/* --- Soft Skills Section --- */}
+      <div className="category-section">
+        <h3 className="category-title">Soft Skills</h3>
+        {softSkills.length > 0 ? (
+          <div className="skills-grid">
+            {softSkills.map(skill => (
+              <SkillCard
+                key={skill.id}
+                skill={skill}
+                onSkillLevelChange={onSkillLevelChange}
+                onRemoveSkill={onRemoveSkill}
+                getSkillLevelLabel={getSkillLevelLabel}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="empty-state">No soft skills added yet. Click "Add Soft Skill" to get started.</p>
+        )}
+      </div>
+
+      {/* --- Skill Selection Modal --- */}
+      {isModalOpen && (
+        <SkillSelectionModal
+          skillsPool={skillsPool}
+          userSkills={userSkills} // Pass userSkills to filter out already added ones
+          category={currentSkillCategory}
+          onSelectSkill={(skill) => {
+            onAddSkill(skill);
+            handleCloseModal();
+          }}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };
 
-// Interests Section Component
+// --- New SkillCard Component (for cleaner rendering) ---
+const SkillCard = ({ skill, onSkillLevelChange, onRemoveSkill, getSkillLevelLabel }) => (
+  <div className="skill-card selected">
+    <div className="skill-header">
+      <span className="skill-name">{skill.name}</span>
+      <span className="skill-level">
+        {getSkillLevelLabel(skill.level)}
+      </span>
+    </div>
+    <div className="skill-level-selector">
+      {[1, 2, 3, 4].map(level => (
+        <button
+          key={level}
+          className={`level-btn ${skill.level === level ? 'active' : ''}`}
+          onClick={() => onSkillLevelChange(skill.id, level)}
+        >
+          {level}
+        </button>
+      ))}
+    </div>
+    <button 
+      className="remove-skill-btn"
+      onClick={() => onRemoveSkill(skill.id)}
+    >
+      Remove
+    </button>
+  </div>
+);
+
+
+// --- New SkillSelectionModal Component ---
+const SkillSelectionModal = ({ skillsPool, userSkills, category, onSelectSkill, onClose }) => {
+  const availableSkills = skillsPool.filter(
+    poolSkill => 
+      poolSkill.category === category &&
+      !userSkills.some(userSkill => userSkill.id === poolSkill.id)
+  );
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <button className="modal-close-btn" onClick={onClose}>&times;</button>
+        <h2>Select {category} Skills</h2>
+        <p>Choose skills from the list below to add to your profile.</p>
+
+        <div className="modal-skills-grid">
+          {availableSkills.length > 0 ? (
+            availableSkills.map(skill => (
+              <button 
+                key={skill.id} 
+                className={`modal-skill-chip ${skill.category.toLowerCase()}`}
+                onClick={() => onSelectSkill(skill)}
+              >
+                {skill.name}
+              </button>
+            ))
+          ) : (
+            <p className="empty-modal-state">All available {category} skills have been added.</p>
+          )}
+        </div>
+        <button className="modal-cancel-btn" onClick={onClose}>Done</button>
+      </div>
+    </div>
+  );
+};
+
+// --- Interests Section (Unchanged) ---
 const InterestsSection = ({ interests, userInterests, onInterestToggle }) => {
   const interestsByCategory = interests.reduce((acc, interest) => {
     if (!acc[interest.category]) acc[interest.category] = [];
@@ -259,8 +387,8 @@ const InterestsSection = ({ interests, userInterests, onInterestToggle }) => {
   );
 };
 
-// Results Section Component
-const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
+// --- Results Section (Unchanged, minor prop adjustment) ---
+const ResultsSection = ({ userSkills, userInterests, matchScore, onSave, getSkillLevelLabel }) => {
   const careerSuggestions = [
     { name: 'Frontend Developer', match: Math.min(matchScore + 20, 95), skills: ['JavaScript', 'React', 'UI/UX Design'] },
     { name: 'Data Scientist', match: Math.min(matchScore + 15, 90), skills: ['Python', 'Data Analysis', 'Machine Learning'] },
@@ -276,7 +404,6 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
     <div className="section">
       <h2>Career Matching Results</h2>
       
-      {/* Summary Stats */}
       <div className="results-summary">
         <div className="stat-card">
           <h3>Skills Added</h3>
@@ -292,7 +419,6 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
         </div>
       </div>
 
-      {/* Top Skills */}
       {userSkills.length > 0 && (
         <div className="skills-summary">
           <h3>Your Top Skills</h3>
@@ -310,7 +436,6 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
         </div>
       )}
 
-      {/* Career Suggestions */}
       <div className="career-suggestions">
         <h3>Recommended Career Paths</h3>
         <div className="careers-grid">
@@ -336,7 +461,6 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
         </div>
       </div>
 
-      {/* Save Prompt */}
       <div className="save-prompt">
         <h4>Ready to save your assessment?</h4>
         <p>Your skills and interests will be used to personalize your career recommendations.</p>
@@ -347,11 +471,5 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave }) => {
     </div>
   );
 };
-
-// Helper function for skill level labels
-function getSkillLevelLabel(level) {
-  const labels = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-  return labels[level - 1] || 'Not Selected';
-}
 
 export default SkillAssessment;
