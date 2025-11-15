@@ -216,7 +216,7 @@ router.get('/skills', async (req, res) => {
     const mappedSkills = skills.map(skill => ({
       id: skill.id,
       name: skill.name,
-      category: skill.skill_type === 'Technical' ? 'Tech' : 'Soft'
+      category: skill.skill_type.toLowerCase() === 'technical' ? 'Tech' : 'Soft'
     }));
 
     console.log(`Returning ${mappedSkills.length} skills from database`);
