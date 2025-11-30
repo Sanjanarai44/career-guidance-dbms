@@ -46,3 +46,39 @@ CREATE TABLE IF NOT EXISTS Skill (
     skill_type ENUM('Technical', 'Soft') NOT NULL
 );
 
+-- Student Skill table
+CREATE TABLE IF NOT EXISTS student_skill (
+    student_skill_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    skill_id INT NOT NULL,
+    proficiency_level INT DEFAULT 1,
+    FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (skill_id) REFERENCES Skill(skill_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_student_skill (student_id, skill_id)
+);
+
+-- Interest table
+CREATE TABLE IF NOT EXISTS Interest (
+    interest_id INT PRIMARY KEY AUTO_INCREMENT,
+    interest_name VARCHAR(100) NOT NULL,
+    category VARCHAR(100) NOT NULL
+);
+
+-- Student Career Interests table
+CREATE TABLE IF NOT EXISTS student_career_interests (
+    student_interest_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    interest_id INT NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES Student(student_id) ON DELETE CASCADE,
+    FOREIGN KEY (interest_id) REFERENCES Interest(interest_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_student_interest (student_id, interest_id)
+);
+
+-- Career Options table
+CREATE TABLE IF NOT EXISTS career_options (
+    career_id INT PRIMARY KEY AUTO_INCREMENT,
+    career_name VARCHAR(100) NOT NULL,
+    required_skills TEXT, -- Storing the list of skills here (comma separated)
+    description TEXT
+);
+

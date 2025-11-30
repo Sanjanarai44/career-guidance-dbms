@@ -26,6 +26,7 @@ db.connect((err) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/career', require('./routes/career'));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -37,16 +38,16 @@ app.get('/api/test-db', async (req, res) => {
   try {
     // Try to query the database
     const [result] = await db.query('SELECT 1 as test');
-    res.json({ 
-      status: 'success', 
+    res.json({
+      status: 'success',
       message: 'Database connection is working!',
       test: result[0]
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Database connection failed',
-      error: error.message 
+      error: error.message
     });
   }
 });

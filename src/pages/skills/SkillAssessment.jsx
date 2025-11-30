@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { studentAPI } from '../../services/api';
+import { studentAPI, careerAPI } from '../../services/api';
 import './Skills.css'; // Ensure this path is correct
 
 const SkillAssessment = () => {
@@ -12,6 +12,7 @@ const SkillAssessment = () => {
   const [userInterests, setUserInterests] = useState(state.interests || []);
   const [skillsDatabase, setSkillsDatabase] = useState([]);
   const [loadingSkills, setLoadingSkills] = useState(true);
+  const [careerSuggestions, setCareerSuggestions] = useState([]);
 
   // Fetch skills from database on component mount
   useEffect(() => {
@@ -21,32 +22,48 @@ const SkillAssessment = () => {
   const fetchSkills = async () => {
     try {
       setLoadingSkills(true);
-      const skills = await studentAPI.getSkills();
-      console.log('Fetched skills from API:', skills);
-      setSkillsDatabase(skills || []);
+      const [skillsDb, studentSkills, interestsDb, studentInterests] = await Promise.all([
+        studentAPI.getSkills(),
+        studentAPI.getStudentSkills().catch(() => []),
+        studentAPI.getInterests(),
+        studentAPI.getStudentInterests().catch(() => [])
+      ]);
+      console.log('Fetched data from API:', { skillsDb, interestsDb });
+      setSkillsDatabase(skillsDb || []);
+      setInterestsDatabase(interestsDb || []);
+
+      if (studentSkills && studentSkills.length > 0) {
+        setUserSkills(studentSkills);
+      }
+      if (studentInterests && studentInterests.length > 0) {
+        setUserInterests(studentInterests);
+      }
+
+      // Fetch recommendations if we have user data
+      if ((studentSkills && studentSkills.length > 0) || (studentInterests && studentInterests.length > 0)) {
+        fetchRecommendations();
+      }
+
     } catch (error) {
-      console.error('Error fetching skills:', error);
-      // If error, use empty array - skills will be empty but app won't crash
+      console.error('Error fetching data:', error);
+      // If error, use empty array
       setSkillsDatabase([]);
+      setInterestsDatabase([]);
     } finally {
       setLoadingSkills(false);
     }
   };
 
-  const interestsDatabase = [
-    { id: 1, name: 'Web Development', category: 'Technology' },
-    { id: 2, name: 'Mobile App Development', category: 'Technology' },
-    { id: 3, name: 'Data Science', category: 'Analytics' },
-    { id: 4, name: 'Artificial Intelligence', category: 'Technology' },
-    { id: 5, name: 'Cloud Computing', category: 'Infrastructure' },
-    { id: 6, name: 'Cybersecurity', category: 'Security' },
-    { id: 7, name: 'Digital Marketing', category: 'Business' },
-    { id: 8, name: 'Product Management', category: 'Business' },
-    { id: 9, name: 'Game Development', category: 'Creative' },
-    { id: 10, name: 'UI/UX Design', category: 'Creative' },
-    { id: 11, name: 'Research & Development', category: 'Science' },
-    { id: 12, name: 'Entrepreneurship', category: 'Business' }
-  ];
+  const fetchRecommendations = async () => {
+    try {
+      const recommendations = await careerAPI.getRecommendations();
+      setCareerSuggestions(recommendations);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+    }
+  };
+
+  const [interestsDatabase, setInterestsDatabase] = useState([]);
 
   const handleAddSkill = (skillObj) => {
     // skillObj will already contain id, name, category from the modal
@@ -60,7 +77,7 @@ const SkillAssessment = () => {
   };
 
   const handleSkillLevelChange = (skillId, level) => {
-    setUserSkills(userSkills.map(skill => 
+    setUserSkills(userSkills.map(skill =>
       skill.id === skillId ? { ...skill, level } : skill
     ));
   };
@@ -86,15 +103,38 @@ const SkillAssessment = () => {
     return Math.min((skillCount + interestCount) * 8, 100);
   };
 
-  const handleSaveAssessment = () => {
+  const handleSaveAssessment = async () => {
     if (userSkills.length === 0 && userInterests.length === 0) {
       alert('Please add at least one skill or interest before saving!');
       return;
     }
-    actions.addSkills(userSkills);
-    actions.addInterests(userInterests);
-    alert('Assessment saved successfully! Your profile has been updated.');
-    navigate('/dashboard');
+
+    try {
+      // Save skills and interests to backend
+      await Promise.all([
+        studentAPI.updateSkills(userSkills),
+        studentAPI.updateInterests(userInterests)
+      ]);
+
+      // Update context
+      actions.addSkills(userSkills);
+      actions.addInterests(userInterests);
+
+      alert('Assessment saved successfully! Your profile has been updated.');
+
+      // Refresh recommendations
+      await fetchRecommendations();
+
+      // navigate('/dashboard'); // Optional: stay on page to see results
+    } catch (error) {
+      console.error('Error saving assessment:', error);
+      if (error.message && error.message.includes('Student profile not found')) {
+        alert('Please complete your Student Profile before saving skills. Redirecting to Profile page...');
+        navigate('/profile');
+      } else {
+        alert(`Failed to save assessment: ${error.message || 'Unknown error'}`);
+      }
+    }
   };
 
   return (
@@ -107,8 +147,8 @@ const SkillAssessment = () => {
         <div className="assessment-progress">
           <span>Career Match Score: {calculateCareerMatches()}%</span>
           <div className="progress-bar">
-            <div 
-              className="progress-fill" 
+            <div
+              className="progress-fill"
               style={{ width: `${calculateCareerMatches()}%` }}
             ></div>
           </div>
@@ -117,19 +157,19 @@ const SkillAssessment = () => {
 
       <div className="skills-content">
         <div className="assessment-tabs">
-          <button 
+          <button
             className={`tab ${activeSection === 'skills' ? 'active' : ''}`}
             onClick={() => setActiveSection('skills')}
           >
             💼 Skills Inventory
           </button>
-          <button 
+          <button
             className={`tab ${activeSection === 'interests' ? 'active' : ''}`}
             onClick={() => setActiveSection('interests')}
           >
             🔍 Career Interests
           </button>
-          <button 
+          <button
             className={`tab ${activeSection === 'results' ? 'active' : ''}`}
             onClick={() => setActiveSection('results')}
           >
@@ -144,7 +184,7 @@ const SkillAssessment = () => {
                 <p>Loading skills...</p>
               </div>
             ) : (
-              <SkillsSection 
+              <SkillsSection
                 skillsPool={skillsDatabase}
                 userSkills={userSkills}
                 onAddSkill={handleAddSkill}
@@ -156,7 +196,7 @@ const SkillAssessment = () => {
           )}
 
           {activeSection === 'interests' && (
-            <InterestsSection 
+            <InterestsSection
               interests={interestsDatabase}
               userInterests={userInterests}
               onInterestToggle={handleInterestToggle}
@@ -164,18 +204,19 @@ const SkillAssessment = () => {
           )}
 
           {activeSection === 'results' && (
-            <ResultsSection 
+            <ResultsSection
               userSkills={userSkills}
               userInterests={userInterests}
               matchScore={calculateCareerMatches()}
               onSave={handleSaveAssessment}
               getSkillLevelLabel={getSkillLevelLabel}
+              careerSuggestions={careerSuggestions}
             />
           )}
         </div>
 
         <div className="assessment-actions">
-          <button 
+          <button
             className="save-button"
             onClick={handleSaveAssessment}
             disabled={userSkills.length === 0 && userInterests.length === 0}
@@ -189,13 +230,13 @@ const SkillAssessment = () => {
 };
 
 // --- SkillsSection Component (Updated for Modal and Sections) ---
-const SkillsSection = ({ 
-  skillsPool, 
-  userSkills, 
-  onAddSkill, 
-  onRemoveSkill, 
-  onSkillLevelChange, 
-  getSkillLevelLabel 
+const SkillsSection = ({
+  skillsPool,
+  userSkills,
+  onAddSkill,
+  onRemoveSkill,
+  onSkillLevelChange,
+  getSkillLevelLabel
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentSkillCategory, setCurrentSkillCategory] = useState('Tech'); // 'Tech' or 'Soft'
@@ -226,14 +267,14 @@ const SkillsSection = ({
 
       {/* --- Add Skill Buttons (New) --- */}
       <div className="add-skill-buttons">
-        <button 
-          className="add-tech-skill-btn" 
+        <button
+          className="add-tech-skill-btn"
           onClick={() => handleOpenModal('Tech')}
         >
           Add Technical Skill
         </button>
-        <button 
-          className="add-soft-skill-btn" 
+        <button
+          className="add-soft-skill-btn"
           onClick={() => handleOpenModal('Soft')}
         >
           Add Soft Skill
@@ -317,7 +358,7 @@ const SkillCard = ({ skill, onSkillLevelChange, onRemoveSkill, getSkillLevelLabe
         </button>
       ))}
     </div>
-    <button 
+    <button
       className="remove-skill-btn"
       onClick={() => onRemoveSkill(skill.id)}
     >
@@ -362,8 +403,8 @@ const SkillSelectionModal = ({ skillsPool, userSkills, category, onSelectSkill, 
         <div className="modal-skills-grid">
           {availableSkills.length > 0 ? (
             availableSkills.map(skill => (
-              <button 
-                key={skill.id} 
+              <button
+                key={skill.id}
                 className={`modal-skill-chip ${skill.category.toLowerCase()}`}
                 onClick={() => onSelectSkill(skill)}
               >
@@ -378,7 +419,7 @@ const SkillSelectionModal = ({ skillsPool, userSkills, category, onSelectSkill, 
             <div>
               <p className="empty-modal-state">All available {categoryDisplayName} skills have been added.</p>
               <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-                Total {categoryDisplayName} skills in database: {skillsPool.filter(s => s.category === category).length} | 
+                Total {categoryDisplayName} skills in database: {skillsPool.filter(s => s.category === category).length} |
                 Already added: {userSkills.filter(s => s.category === category).length}
               </p>
             </div>
@@ -411,9 +452,9 @@ const InterestsSection = ({ interests, userInterests, onInterestToggle }) => {
           <div className="interests-grid">
             {categoryInterests.map(interest => {
               const isSelected = userInterests.some(i => i.id === interest.id);
-              
+
               return (
-                <div 
+                <div
                   key={interest.id}
                   className={`interest-card ${isSelected ? 'selected' : ''}`}
                   onClick={() => onInterestToggle(interest.id)}
@@ -433,22 +474,18 @@ const InterestsSection = ({ interests, userInterests, onInterestToggle }) => {
 };
 
 // --- Results Section (Unchanged, minor prop adjustment) ---
-const ResultsSection = ({ userSkills, userInterests, matchScore, onSave, getSkillLevelLabel }) => {
-  const careerSuggestions = [
-    { name: 'Frontend Developer', match: Math.min(matchScore + 20, 95), skills: ['JavaScript', 'React', 'UI/UX Design'] },
-    { name: 'Data Scientist', match: Math.min(matchScore + 15, 90), skills: ['Python', 'Data Analysis', 'Machine Learning'] },
-    { name: 'Full Stack Developer', match: Math.min(matchScore + 10, 85), skills: ['JavaScript', 'Node.js', 'SQL', 'React'] },
-    { name: 'Product Manager', match: Math.min(matchScore + 5, 75), skills: ['Project Management', 'Communication'] }
-  ];
+const ResultsSection = ({ userSkills, userInterests, matchScore, onSave, getSkillLevelLabel, careerSuggestions }) => {
+  // careerSuggestions is now passed from parent or used from state
+  // const careerSuggestions = [ ... ] - REMOVED HARDCODED DATA
 
   const handleExploreCareer = (career) => {
-    alert(`Exploring ${career.name} path! This career has a ${career.match}% match with your profile.`);
+    alert(`Exploring ${career.title || career.name} path! This career has a ${career.matchScore || career.match}% match with your profile.`);
   };
 
   return (
     <div className="section">
       <h2>Career Matching Results</h2>
-      
+
       <div className="results-summary">
         <div className="stat-card">
           <h3>Skills Added</h3>
@@ -487,15 +524,15 @@ const ResultsSection = ({ userSkills, userInterests, matchScore, onSave, getSkil
           {careerSuggestions.map((career, index) => (
             <div key={index} className="career-card">
               <div className="career-header">
-                <h4>{career.name}</h4>
-                <span className="match-badge">{career.match}% Match</span>
+                <h4>{career.title || career.name}</h4>
+                <span className="match-badge">{career.matchScore || career.match}% Match</span>
               </div>
               <div className="career-skills">
-                {career.skills.map(skill => (
+                {(career.requiredSkills || career.skills).map(skill => (
                   <span key={skill} className="skill-badge">{skill}</span>
                 ))}
               </div>
-              <button 
+              <button
                 className="explore-button"
                 onClick={() => handleExploreCareer(career)}
               >

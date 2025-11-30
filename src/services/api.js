@@ -104,6 +104,41 @@ export const studentAPI = {
       method: 'GET',
     });
   },
+  getStudentSkills: async () => {
+    return apiRequest('/users/student/skills', {
+      method: 'GET',
+    });
+  },
+  updateSkills: async (skills) => {
+    return apiRequest('/users/student/skills', {
+      method: 'POST',
+      body: JSON.stringify({ skills }),
+    });
+  },
+  getInterests: async () => {
+    return apiRequest('/users/interests', {
+      method: 'GET',
+    });
+  },
+  getStudentInterests: async () => {
+    return apiRequest('/users/student/interests', {
+      method: 'GET',
+    });
+  },
+  updateInterests: async (interests) => {
+    return apiRequest('/users/student/interests', {
+      method: 'POST',
+      body: JSON.stringify({ interests }),
+    });
+  },
+};
+
+export const careerAPI = {
+  getRecommendations: async () => {
+    return apiRequest('/career/recommendations', {
+      method: 'GET',
+    });
+  },
 };
 
 export default apiRequest;

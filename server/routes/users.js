@@ -26,7 +26,7 @@ router.get('/student', verifyToken, async (req, res) => {
 router.put('/student', verifyToken, async (req, res) => {
   try {
     const { name, email, department, graduation_year, cgpa } = req.body;
-    
+
     // Helper function to convert empty strings to null for optional fields
     const toNullIfEmpty = (value) => {
       if (value === '' || value === undefined) return null;
@@ -44,11 +44,11 @@ router.put('/student', verifyToken, async (req, res) => {
       await db.query(
         'INSERT INTO Student (user_id, name, email, department, graduation_year, cgpa) VALUES (?, ?, ?, ?, ?, ?)',
         [
-          req.userId, 
-          name || '', 
-          email || '', 
-          toNullIfEmpty(department), 
-          toNullIfEmpty(graduation_year), 
+          req.userId,
+          name || '',
+          email || '',
+          toNullIfEmpty(department),
+          toNullIfEmpty(graduation_year),
           toNullIfEmpty(cgpa)
         ]
       );
@@ -194,7 +194,7 @@ router.post('/academic-records', verifyToken, async (req, res) => {
       }
     }
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Academic record added successfully',
       record_id: recordId
     });
@@ -227,5 +227,193 @@ router.get('/skills', async (req, res) => {
   }
 });
 
+// Get student skills
+router.get('/student/skills', verifyToken, async (req, res) => {
+  try {
+    // Get student_id
+    const [students] = await db.query(
+      'SELECT student_id FROM Student WHERE user_id = ?',
+      [req.userId]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    const studentId = students[0].student_id;
+
+    // Get skills
+    const [skills] = await db.query(
+      `SELECT s.skill_id as id, s.skill_name as name, s.skill_type, ss.proficiency_level as level 
+       FROM student_skill ss
+       JOIN Skill s ON ss.skill_id = s.skill_id
+       WHERE ss.student_id = ?`,
+      [studentId]
+    );
+
+    const mappedSkills = skills.map(skill => ({
+      id: skill.id,
+      name: skill.name,
+      category: skill.skill_type.toLowerCase() === 'technical' ? 'Tech' : 'Soft',
+      level: skill.level
+    }));
+
+    res.json(mappedSkills);
+  } catch (error) {
+    console.error('Get student skills error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Update student skills
+router.post('/student/skills', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    const { skills } = req.body;
+
+    if (!Array.isArray(skills)) {
+      return res.status(400).json({ error: 'Skills must be an array' });
+    }
+
+    // Get student_id (can use pool here)
+    const [students] = await db.query(
+      'SELECT student_id FROM Student WHERE user_id = ?',
+      [req.userId]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    const studentId = students[0].student_id;
+
+    // Get a dedicated connection for the transaction
+    connection = await db.promisePool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Remove existing skills
+      await connection.query('DELETE FROM student_skill WHERE student_id = ?', [studentId]);
+
+      // Add new skills
+      if (skills.length > 0) {
+        const values = skills.map(skill => [studentId, skill.id, skill.level || 1]);
+        await connection.query(
+          'INSERT INTO student_skill (student_id, skill_id, proficiency_level) VALUES ?',
+          [values]
+        );
+      }
+
+      await connection.commit();
+      res.json({ message: 'Skills updated successfully' });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Update student skills error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
+
 module.exports = router;
+
+// Get all interests (public)
+router.get('/interests', async (req, res) => {
+  try {
+    const [interests] = await db.query(
+      'SELECT interest_id as id, interest_name as name, category FROM Interest ORDER BY category, interest_name'
+    );
+    res.json(interests);
+  } catch (error) {
+    console.error('Get interests error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Get student interests
+router.get('/student/interests', verifyToken, async (req, res) => {
+  try {
+    // Get student_id
+    const [students] = await db.query(
+      'SELECT student_id FROM Student WHERE user_id = ?',
+      [req.userId]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    const studentId = students[0].student_id;
+
+    // Get interests
+    const [interests] = await db.query(
+      `SELECT i.interest_id as id, i.interest_name as name, i.category
+       FROM student_career_interests sci
+       JOIN Interest i ON sci.interest_id = i.interest_id
+       WHERE sci.student_id = ?`,
+      [studentId]
+    );
+
+    res.json(interests);
+  } catch (error) {
+    console.error('Get student interests error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Update student interests
+router.post('/student/interests', verifyToken, async (req, res) => {
+  let connection;
+  try {
+    const { interests } = req.body;
+
+    if (!Array.isArray(interests)) {
+      return res.status(400).json({ error: 'Interests must be an array' });
+    }
+
+    // Get student_id
+    const [students] = await db.query(
+      'SELECT student_id FROM Student WHERE user_id = ?',
+      [req.userId]
+    );
+
+    if (students.length === 0) {
+      return res.status(404).json({ error: 'Student profile not found' });
+    }
+
+    const studentId = students[0].student_id;
+
+    // Get a dedicated connection for the transaction
+    connection = await db.promisePool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      // Remove existing interests
+      await connection.query('DELETE FROM student_career_interests WHERE student_id = ?', [studentId]);
+
+      // Add new interests
+      if (interests.length > 0) {
+        const values = interests.map(interest => [studentId, interest.id]);
+        await connection.query(
+          'INSERT INTO student_career_interests (student_id, interest_id) VALUES ?',
+          [values]
+        );
+      }
+
+      await connection.commit();
+      res.json({ message: 'Interests updated successfully' });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Update student interests error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  } finally {
+    if (connection) connection.release();
+  }
+});
 
