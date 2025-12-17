@@ -40,11 +40,11 @@ const Dashboard = () => {
             <p>Add your skills</p>
           </div>
           
-          <div className="stat-card" onClick={() => navigate('/career')}>
+          {/* <div className="stat-card" onClick={() => navigate('/career')}>
             <h3>🎯 Career Ideas</h3>
             <p className="stat-number">3</p>
             <p>Explore opportunities</p>
-          </div>
+          </div> */}
 
           <div className="stat-card" onClick={() => navigate('/mentors')}>
             <h3>👥 Available Mentors</h3>

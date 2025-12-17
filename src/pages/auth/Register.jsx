@@ -3,29 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import './Auth.css';
 
-const Login = () => {
+const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const response = await authAPI.login(email, password);
+      const response = await authAPI.register(email, password);
       
-      // Store token and user data
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
-      // Navigate to dashboard
-      navigate('/dashboard');
+      // Show success message and navigate to login
+      alert('Account created successfully! Please login.');
+      navigate('/login');
     } catch (err) {
-      setError(err.message || 'User not found');
+      setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -36,10 +47,10 @@ const Login = () => {
       <div className="auth-card">
         <div className="auth-header">
           <h1>🎓 Career Guide</h1>
-          <p>Welcome back! Please sign in to continue</p>
+          <p>Create an account to get started</p>
         </div>
         
-        <form onSubmit={handleLogin} className="auth-form">
+        <form onSubmit={handleRegister} className="auth-form">
           <div className="input-group">
             <label>Email</label>
             <input
@@ -57,7 +68,18 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Create a password"
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label>Confirm Password</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
               required
             />
           </div>
@@ -69,15 +91,15 @@ const Login = () => {
           )}
           
           <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Signing In...' : 'Sign In'}
+            {loading ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
         
         <div className="auth-footer">
           <p>
-            Don't have an account? 
-            <span className="link" onClick={() => navigate('/register')}>
-              Sign up here
+            Already have an account? 
+            <span className="link" onClick={() => navigate('/login')}>
+              Sign in here
             </span>
           </p>
         </div>
@@ -86,4 +108,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
